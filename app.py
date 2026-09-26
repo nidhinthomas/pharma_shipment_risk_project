@@ -2,12 +2,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from risk_logic import (
+from pharma_risk import (
     HIGH_RISK_THRESHOLD,
     TIER_COLORS,
     TIER_ORDER,
+    ShipmentDataError,
     build_recommendations,
     compute_risk,
+    load_shipment_data,
     validate_columns,
 )
 
@@ -18,12 +20,16 @@ st.caption("Upload a shipment Excel file to flag cold-chain and delivery risk.")
 
 uploaded_file = st.file_uploader("Upload shipment Excel file (.xlsx)", type=["xlsx"])
 
-if uploaded_file is not None:
-    raw_df = pd.read_excel(uploaded_file)
-    source_label = uploaded_file.name
-else:
-    raw_df = pd.read_excel("sample_data.xlsx")
-    source_label = "sample_data.xlsx (bundled demo data — upload your own file above)"
+try:
+    if uploaded_file is not None:
+        raw_df = load_shipment_data(uploaded_file)
+        source_label = uploaded_file.name
+    else:
+        raw_df = load_shipment_data("sample_data.xlsx")
+        source_label = "sample_data.xlsx (bundled demo data — upload your own file above)"
+except ShipmentDataError as exc:
+    st.error(str(exc))
+    st.stop()
 
 st.info(f"Using: **{source_label}**")
 
